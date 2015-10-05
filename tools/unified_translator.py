@@ -56,6 +56,7 @@ class UnifiedTranslator(object):
         # all supported platforms
         platforms = OrderedDict([
             ("ocr", self.ocr_x86_init),
+            ("hpx", self.hpx_x86_init),
             ("ocr/x86", self.ocr_x86_init),
             ("ocr/mpi", self.ocr_x86_mpi_init),
             ("ocr/tg", self.ocr_tg_init),
@@ -128,6 +129,7 @@ class UnifiedTranslator(object):
         loader = ChoiceLoader(self.loaders)
         self.template_env = Environment(loader=loader, extensions=['jinja2.ext.with_','jinja2.ext.do'], keep_trailing_newline=True)
         self.template_env.filters['macro'] = dispatch_macro
+        self.template_env.globals['length'] = len
         # support dir
         self.support_dir = "./cnc_support/" + self.cnc_type
 
@@ -281,6 +283,35 @@ class UnifiedTranslator(object):
         self.add_user_file("icnc-tcp-start.sh")
         self.makefile = "Makefile.icnc-tcp"
         self.add_user_file(self.makefile)
+
+    ################################
+    ## HPX 
+    ################################
+
+    def hpx_x86_init(self):
+        self.runtime_name = "hpx"
+        self.cnc_type = self.runtime_name
+        self.add_template_path("hpx")
+        # add runtime files
+        self.add_support_file("hpx.h")
+        self.add_support_file("cnchpx.h")
+        # self.add_support_file("hpx_internal.h")
+        
+        # self.add_support_file("hpx.cpp")
+        self.add_support_file("cnc_common.h")
+        self.add_support_file("cnc_common.c")
+        # add graph scaffolding files
+        # self.add_support_file("_internal.h")
+        self.add_support_file("_context.h")
+        self.add_support_file("_step_ops.c")
+        # self.add_support_file("_context.cpp")
+        self.add_support_file("_item_ops.c")
+        self.add_support_file("_graph_ops.c")
+        self.add_support_file("hpx_macros.inc.c")
+        # makefile
+        self.makefile = "Makefile.hpx"
+        self.add_user_file(self.makefile)
+
 
 
 ################################

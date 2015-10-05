@@ -71,7 +71,7 @@ args
 {% else -%}
 {% set multiple = "" -%}
 {% endif -%}
-{{itemcoll.type.ptrType ~ varname}} = cncItemAlloc(sizeof(*{{varname}}){{multiple}});
+{{itemcoll.type.ptrType ~ varname}} = ({{itemcoll.type.ptrType}})cncItemAlloc(sizeof(*{{varname}}){{multiple}});
 {%- endmacro %}
 
 {#/****** Indent calling block to the specified level ******/#}

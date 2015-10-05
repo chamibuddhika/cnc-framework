@@ -1,0 +1,40 @@
+{#/* Inherit from generic CnC makefile */-#}
+{% extends "Makefile.common" %}
+
+{% block cnc_name_comment %}HPX{% endblock %}
+
+{% block cnc_type %}hpx{% endblock %}
+
+{% block env_setup_post %}
+# Make sure we can find icnc
+ifndef HPXROOT
+$(error Please source the environment setup script for HPXROOT)
+endif #HPXROOT
+{% endblock env_setup_post %}
+
+{% block xtra_libs %}{% endblock %}
+
+{% block xtra_srcs -%}
+SRCS += $(patsubst %,$(CNC_SUPPORT_DIR)/%.c,cncocr cnc_common cncocr_itemcoll)
+SRCS += $(patsubst %,$(CNC_SUPPORT_DIR)/{{g.name}}_%_ops.c,step item graph)
+{% endblock xtra_srcs %}
+
+{% block xtra_objs -%}
+OBJS += $(patsubst %.cpp,$(WORKLOAD_BUILD)/%.o,$(CPP_SRCS))
+CFLAGS += -Wno-unused-variable
+{% endblock xtra_objs %}
+
+{% block xtra_targets %}
+# building C++ source files
+$(WORKLOAD_BUILD)/%.o: %.cpp $(HEADERS)
+	$(ensure_dir)
+	$(CXX) $(CFLAGS) -c $< -o $@
+{% endblock xtra_targets %}
+
+{% block linker %}$(CXX){% endblock %}
+
+{% block run_target -%}
+run: install
+	cd $(WORKLOAD_EXEC) && \
+	$(RUN_TOOL) ./$(TARGET) $(WORKLOAD_ARGS)
+{% endblock run_target %}
