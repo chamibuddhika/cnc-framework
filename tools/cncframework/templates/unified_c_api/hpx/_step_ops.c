@@ -26,28 +26,22 @@ extern pthread_mutex_t _cncDebugMutex;
 {% set paramTag = (stepfun.tag|count) <= 8 -%}
 
 /* {{stepfun.collName}} task creation */
-void {{util.qualified_step_name(stepfun)}}_handler({{ util.print_tag(stepfun.tag, typed=True)
-        }}{{ util.print_bindings(stepfun.inputItems, typed=True)
-        }}{{util.g_ctx_param()}});
+int {{util.qualified_step_name(stepfun)}}_handler(void* context, size_t size);
 
 HPX_ACTION(HPX_DEFAULT, HPX_MARSHALLED, 
            {{util.qualified_step_name(stepfun)}}_action, 
            {{util.qualified_step_name(stepfun)}}_handler,
-           {% for x in stepfun.tag -%}get_hpx_type("cncTag_t"), {% endfor -%} 
-           {% for input in stepfun.inputs recursive -%}
-           get_hpx_type("{{hpxutil.print_collType(input.collName)}}"), {% endfor -%}
            HPX_POINTER, HPX_SIZE_T);
 
-static void cncPrescribe_{{stepfun.collName}}_handler({{ util.print_tag(stepfun.tag, typed=True)
-        }}{{ util.print_bindings(stepfun.inputItems, typed=True)
-        }}void*{{util.g_ctx_var()}}, size_t size) {
+int {{util.qualified_step_name(stepfun)}}_handler(void* context, size_t size) {
 
-{%- call util.render_indented(1) -%}
-{{util.g_ctx_param()}}=({{util.g_ctx_t()}}*){{util.g_ctx_var()}};
+{%- call util.render_indented(1) %}
+{{util.g_ctx_param()}}=({{util.g_ctx_t()}}*)context;
 {{util.qualified_step_name(stepfun)}}(
-    {{util.print_tag(stepfun.tag, typed=False)}}
-    {% for input in stepfun.inputs recursive %} {{input.binding}}, {% endfor -%}
+    {% for tag in stepfun.tag %}{{util.g_ctx_var()}}->{{stepfun.collName}}.{{tag}}, {% endfor -%}
+    {% for input in stepfun.inputs recursive %}{{util.g_ctx_var()}}->{{stepfun.collName}}.{{input.binding}}, {% endfor -%}
     {{util.g_ctx_var()}});
+return HPX_SUCCESS;
 {% endcall %}
 
 }
@@ -77,7 +71,7 @@ else {
 {% do inputIsEnabled.pop() -%}
 {% else -%}
 {%- set comment = "Set up \"" ~ input.binding ~ "\" input dependencies" -%}
-{{hpxutil.print_collType(input.collName)}}{{input.binding}};
+{{hpxutil.print_collType(input.collName)}} {{input.binding}};
 {%- call(var) util.render_tag_nest(comment, input, useTag=inputIsEnabled[-1]) -%}
 {#/* FIXME: shouldn't even do gets if the input is disabled,
   but that will require a more complicated calculation on the
@@ -94,10 +88,19 @@ else {
 {% endcall %}
 
 {%- call util.render_indented(1) -%}
+{% for input in stepfun.inputs recursive -%}
+{{hpxutil.print_set_ctx_binding(stepfun.collName, input.binding, input.binding, stepfun.inputs, ";")}}
+{% endfor %}
+{% for tag in stepfun.tag -%}
+{{hpxutil.print_set_ctx_tag(stepfun.collName, tag, tag, stepfun.tag, ";")}} 
+{% endfor %}
+
 size_t sz = sizeof({{util.g_ctx_t()}});
-hpx_process_call({{util.g_ctx_var()}}->process, HPX_HERE, {{util.qualified_step_name(stepfun)}}_action, done, 
-    {{hpxutil.print_tag_pointers(stepfun.tag, typed=False)}}
-    {% for input in stepfun.inputs recursive %} &{{input.binding}}, {% endfor -%}
+hpx_process_call(
+    {{util.g_ctx_var()}}->process, 
+    HPX_HERE, 
+    {{util.qualified_step_name(stepfun)}}_action, 
+    HPX_NULL, 
     {{util.g_ctx_var()}}, &sz);
 {% endcall %}
 

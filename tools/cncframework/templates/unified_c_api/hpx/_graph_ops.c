@@ -20,10 +20,10 @@ pthread_mutex_t _cncDebugMutex = PTHREAD_MUTEX_INITIALIZER;
  ***********************************************************/
 
 // Handler prototypes
-int hpx_main_handler(void* context);
+void hpx_main_handler(void* context, size_t ctxSz, void* arguments, size_t argSz);
 
 // Handlers and actions
-HPX_ACTION(HPX_MARSHALLED, 0, hpx_main, hpx_main_handler, HPX_POINTER, 
+HPX_ACTION(HPX_DEFAULT, HPX_MARSHALLED, hpx_main, hpx_main_handler, HPX_POINTER, 
     HPX_SIZE_T, HPX_POINTER, HPX_SIZE_T);
 
 void hpx_main_handler(void* context, size_t ctxSz, void* arguments, size_t argSz) {
@@ -36,7 +36,7 @@ void hpx_main_handler(void* context, size_t ctxSz, void* arguments, size_t argSz
 {{util.g_ctx_t()}} *{{g.name}}_create() {
      
     {{util.g_ctx_t()}}* {{util.g_ctx_var()}} = 
-      ({{util.g_ctx_t()}}) malloc(sizeof({{util.g_ctx_t()}}));
+      ({{util.g_ctx_t()}}*) malloc(sizeof({{util.g_ctx_t()}}));
     return {{util.g_ctx_var()}};
 }
 
@@ -55,10 +55,6 @@ void {{g.name}}_destroy({{util.g_ctx_param()}}) {
 }
 
 void {{g.name}}_launch({{util.g_args_param()}}, {{util.g_ctx_param()}}) {
-    if (hpx_init(&argc, &argv)) {
-      hpx_print_help();
-      return -1;
-    }
 
     // initialize item collections
     {% for i in g.concreteItems -%}
@@ -66,7 +62,8 @@ void {{g.name}}_launch({{util.g_args_param()}}, {{util.g_ctx_param()}}) {
 
     // Calculate the item collection size to be allocated
     long arr_size = 1;
-    for (int i=0; i < {{length(i.key)}}; i++) {
+    int i;
+    for (i=0; i < {{length(i.key)}}; i++) {
       arr_size *= DEFAULT_ARRAY_SIZE;
     }
 
@@ -108,10 +105,16 @@ void {{g.name}}_await({{
 extern int cncMain(int argc, char *argv[]);
 
 int main(int argc, char *argv[]) {
+    if (hpx_init(&argc, &argv)) {
+      hpx_print_help();
+      return -1;
+    }
 
     cncMain(argc, argv);
 
-    hpx_shutdown(0);
+    hpx_finalize();
+
+    hpx_exit(0);
 }
 
 #endif /* NO_CNC_MAIN */

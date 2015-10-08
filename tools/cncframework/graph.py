@@ -171,6 +171,7 @@ class StepFunction(object):
         # Process inputs and outputs
         self.inputs = makeRefs(stepIO.inputs, self.inputItems)
         self.outputs = makeRefs(stepIO.outputs, self.outputItems)
+        # self.output_steps = filter(lambda x: x.kind == 'STEP', self.outputs);
         # Check all requrested bindings for repeats
         allItems = list(chain(self.inputItems, self.outputItems))
         def getItemName(i): return i.binding or i.collName

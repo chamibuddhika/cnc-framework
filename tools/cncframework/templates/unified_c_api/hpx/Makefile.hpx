@@ -6,16 +6,19 @@
 {% block cnc_type %}hpx{% endblock %}
 
 {% block env_setup_post %}
-# Make sure we can find icnc
-ifndef HPXROOT
-$(error Please source the environment setup script for HPXROOT)
+# Make sure we can find hpx
+ifndef HPX_INSTALL_ROOT
+$(error Please source the environment setup script after setting HPX_INSTALL_ROOT)
+else
+	CFLAGS  += $(shell pkg-config --cflags hpx) 
+	LDFLAGS += $(shell pkg-config --libs --static hpx) 
 endif #HPXROOT
 {% endblock env_setup_post %}
 
 {% block xtra_libs %}{% endblock %}
 
 {% block xtra_srcs -%}
-SRCS += $(patsubst %,$(CNC_SUPPORT_DIR)/%.c,cncocr cnc_common cncocr_itemcoll)
+SRCS += $(patsubst %,$(CNC_SUPPORT_DIR)/%.c,cnchpx_itemcoll)
 SRCS += $(patsubst %,$(CNC_SUPPORT_DIR)/{{g.name}}_%_ops.c,step item graph)
 {% endblock xtra_srcs %}
 

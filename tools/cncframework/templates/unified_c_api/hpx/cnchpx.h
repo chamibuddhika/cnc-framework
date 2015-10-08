@@ -5,22 +5,30 @@
 #ifndef {{defname}}
 #define {{defname}}
 
-#include "hpx.h"
+#include <hpx/hpx.h>
 #include <stdio.h>
-#include <stdblib.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define DEFAULT_NUM_BUCKETS 1024
 #define DEFAULT_BUCKET_SIZE 128
 
 #define DEFAULT_ARRAY_SIZE 128
 
-#define CNC_SHUTDOWN_ON_FINISH(ctx) {{g.name}}_destroy(ctx) 
-
 /********************************\
 ******** CNC TYPE ALIASES ********
 \********************************/
 
-typedef cncItemCollection_t hpx_addr_t; // Item collection address
+typedef hpx_addr_t cncItemCollection_t; // Item collection address
+
+typedef uint8_t  u8;
+typedef int8_t   s8;
+typedef uint16_t u16;
+typedef int16_t  s16;
+typedef uint32_t u32;
+typedef int32_t  s32;
+typedef uint64_t u64;
+typedef int64_t  s64;
 
 typedef s64 cncTag_t; // tag components
 
@@ -48,7 +56,7 @@ typedef struct cncItemFuture {
 ******** Functions and defintions *******
 \****************************************/
 
-inline hpx_type_t get_hpx_type(char* type_name) {
+static inline hpx_type_t get_hpx_type(char* type_name) {
   if (!strcmp(type_name, "u64")) {
     return HPX_UINT64;
   } else if (!strcmp(type_name, "u32")) {
@@ -99,11 +107,32 @@ void cncItemFree(void *item);
 hpx_addr_t item_at(hpx_addr_t start, int index); 
 
 // This is for allocating global item collections at AGAS
-cncItemCollection_t _cncItemCollectionCreate(void);
+cncItemCollection_t _cncItemCollectionCreate(long arr_size, int item_size, 
+    int future_size);
 void _cncItemCollectionDestroy(cncItemCollection_t coll);
 
-cncItemCollection_t _cncItemCollectionSingletonCreate(void);
+cncItemCollection_t _cncItemCollectionSingletonCreate(int item_size,
+    int future_size);
 void _cncItemCollectionSingletonDestroy(cncItemCollection_t coll);
 
+/*********************************\
+******** CNC HELPER MACROS ********
+\*********************************/
+
+/* warning for variadic macro support */
+#if __GNUC__ < 3 && !defined(__clang__) && __STDC_VERSION__ < 199901L && !defined(NO_VARIADIC_MACROS)
+#warning Your compiler might not support variadic macros, in which case the CNC_REQUIRE macro is not supported. You can disable this warning by setting NO_VARIADIC_MACROS to 0, or disable the macro definitions by setting it to 1.
+#endif
+
+#define CNC_ABORT(err) exit(err)
+
+#define CNC_SHUTDOWN_ON_FINISH(ctx) {{g.name}}_destroy(ctx) 
+
+#if !NO_VARIADIC_MACROS
+#define CNC_REQUIRE(cond, ...) do { if (!(cond)) { printf(__VA_ARGS__); CNC_ABORT(1); } } while (0)
+#endif
+
+/* squelch "unused variable" warnings */
+#define MAYBE_UNUSED(x) ((void)x)
 
 #endif /*{{defname}}*/

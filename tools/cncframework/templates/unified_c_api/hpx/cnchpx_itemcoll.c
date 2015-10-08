@@ -14,14 +14,15 @@ hpx_addr_t item_at(hpx_addr_t start, int index) {
 }
 
 // Handler prototypes 
-void item_init_handler(cncItemFuture* item, int future_size);
+int item_init_handler(cncItemFuture* item, int future_size);
 
 // HPX actions
-HPX_ACTION(HPX_DEFAULT, HPX_PINNED, item_init, item_init_handler, HPX_POINTER);
+HPX_ACTION(HPX_DEFAULT, HPX_PINNED, item_init, item_init_handler, HPX_POINTER, HPX_INT);
 
 // Handler implementations
-void item_init_handler(cncItemFuture* item, int future_size) {
+int item_init_handler(cncItemFuture* item, int future_size) {
   item->future = hpx_lco_future_new(future_size);
+  return HPX_SUCCESS;
 }
 
 /***********************************************
@@ -39,14 +40,15 @@ void cncItemFree(void *item) {
 cncItemCollection_t _cncItemCollectionCreate(long arr_size, int item_size, 
     int future_size) {
 
-    hpx_addr_t addr = hpx_gas_calloc_blocked(arr_size, item_size, 0);
+    hpx_addr_t addr = hpx_gas_calloc_cyclic(arr_size, item_size, 0);
     assert(addr != HPX_NULL);
 
     // Initialize each item
     hpx_addr_t done = hpx_lco_and_new(arr_size); 
-    for (int i = 0; i < N; i++) {
+    int i;
+    for (i = 0; i < arr_size; i++) {
        hpx_addr_t item = item_at(addr, i); 
-       hpx_call(item, item_init, done); 
+       hpx_call(item, item_init, done, &future_size); 
     }
    
     hpx_lco_wait(done); 
@@ -61,7 +63,7 @@ void _cncItemCollectionDestroy(cncItemCollection_t coll) {
 
 cncItemCollection_t _cncItemCollectionSingletonCreate(int item_size,
     int future_size) {
-    hpx_addr_t addr = hpx_gas_calloc(1, item_size, 0);
+    hpx_addr_t addr = hpx_gas_calloc_cyclic(1, item_size, 0);
     assert(addr != HPX_NULL);
 
     hpx_call_sync(addr, item_init, NULL, 0);

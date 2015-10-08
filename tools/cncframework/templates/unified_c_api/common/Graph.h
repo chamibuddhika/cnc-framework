@@ -50,7 +50,7 @@ void cncPut_{{name}}({{i.type.ptrType}}_item, {{
         util.print_tag(i.key, typed=True)
         }}{{util.g_ctx_param()}});
 
-{{i.type.baseType}}cncGet_{{name}}({{ util.print_tag(i.key, typed=True) }}
+{{i.type.baseType}} cncGet_{{name}}({{ util.print_tag(i.key, typed=True) }}
     {{util.g_ctx_param()}});
 {% endfor %}
 

@@ -11,20 +11,22 @@
 
 
 // Handler prototypes 
-void item_put_handler(cncItemFuture* item, void* value, size_t size);
-void item_get_handler(cncItemFuture* item); 
+int item_put_handler(cncItemFuture* item, void* value, size_t size);
+int item_get_handler(cncItemFuture* item, void* value, size_t size); 
 
 // HPX actions
 HPX_ACTION(HPX_DEFAULT, HPX_PINNED, item_put, item_put_handler, HPX_POINTER, 
     HPX_POINTER, HPX_SIZE_T);
-HPX_ACTION(HPX_DEFAULT, HPX_PINNED, item_get, item_get_handler, HPX_POINTER);
+HPX_ACTION(HPX_DEFAULT, HPX_PINNED, item_get, item_get_handler, HPX_POINTER,
+    HPX_POINTER, HPX_SIZE_T);
 
 // Handler implementations
-void item_put_handler(cncItemFuture* item, void* value, size_t size) {
+int item_put_handler(cncItemFuture* item, void* value, size_t size) {
   hpx_lco_set(item->future, size, value, HPX_NULL, HPX_NULL); 
+  return HPX_SUCCESS;
 }
 
-void item_get_handler(cncItemFuture* item, void* value, size_t size) {
+int item_get_handler(cncItemFuture* item, void* value, size_t size) {
   hpx_lco_get(item->future, size, value); 
   HPX_THREAD_CONTINUE(*value);
 }
@@ -47,9 +49,10 @@ void cncPut_{{i.collName}}({{i.type.ptrType}}_item, {{
 
     // Calculate the index at the future array
     long idx = 0;
-    for (int i = _tagSize; i > 0; i--) {
+    int i,j;
+    for (i = _tagSize; i > 0; i--) {
       long entries = 1;
-      for (int j = i-1; j > 0; j++) {
+      for (j = i-1; j > 0; j++) {
         entries *= DEFAULT_ARRAY_SIZE;
       }
 
@@ -89,9 +92,10 @@ void cncPut_{{i.collName}}({{i.type.ptrType}}_item, {{
 
     // Calculate the index at the future array
     long idx = 0;
-    for (int i = _tagSize; i > 0; i--) {
+    int i,j;
+    for (i = _tagSize; i > 0; i--) {
       long entries = 1;
-      for (int j = i-1; j > 0; j++) {
+      for (j = i-1; j > 0; j++) {
         entries *= DEFAULT_ARRAY_SIZE;
       }
 
