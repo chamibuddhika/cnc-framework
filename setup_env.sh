@@ -4,6 +4,9 @@ if [ -f setup_env.sh ] && [ -f ./bin/ucnc_t ]; then
         echo 'Using existing $XSTACK_ROOT (CnC-OCR)'
     elif [ -d "$OCR_INSTALL_ROOT" ]; then
         echo 'Using existing $OCR_INSTALL_ROOT (CnC-OCR)'
+    elif [ -d "$HPX_INSTALL_ROOT" ]; then
+        export PKG_CONFIG_PATH=$HPX_INSTALL_ROOT/lib/pkgconfig:$PKG_CONFIG_PATH
+        echo 'Using existing $HPX_INSTALL_ROOT (CnC-HPX)'
     elif [ "$(basename $(dirname $PWD))" = hll ]; then
         export XSTACK_ROOT=$(dirname $(dirname $PWD))
         echo 'Set $XSTACK_ROOT'
