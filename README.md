@@ -26,6 +26,7 @@ You will also need one or more of the supported runtime backends:
 
 * OCR 1.0
 * Intel CnC
+* HPX
 
 
 Setting up the environment for OCR
@@ -77,6 +78,28 @@ To use the iCnC runtime with the CnC framework, you must explicitly specify a
 platform when invoking the CnC translator tool:
 
     ucnc_t --platform=icnc
+
+Setting up the environment for HPX
+-----------------------------------
+
+This requires HPX to be setup before hand.
+Detailed installation instructions for iCnC can be found on its website:
+
+http://hpx.crest.iu.edu/
+
+You will also need to set up the environment variables for the HPX framework.
+Set HPX_INSTALL_ROOT variable to point to the HPX installation root directory
+and source `setup_env.sh` from CnC root directory:
+
+    source setup_env.sh
+
+This script sets the `UCNC_ROOT` to point to the CnC root, and updates the `PATH`
+to include the CnC `bin` directory (which contains the graph translator tool).
+
+To use the HPX runtime with the CnC framework, you must explicitly specify a
+platform when invoking the CnC translator tool:
+
+    ucnc_t --platform=hpx
 
 
 Verifying the installation
