@@ -37,10 +37,18 @@ int {{util.qualified_step_name(stepfun)}}_handler(void* context, size_t size) {
 
 {%- call util.render_indented(1) %}
 {{util.g_ctx_param()}}=({{util.g_ctx_t()}}*)context;
+/* #if CNC_DEBUG_TRACE
+    printf("<<CnC Trace>>: RUNNING {{stepfun.collName}} @ %ld, %ld\n", 
+        ctx->addToLeftEdge.row, ctx->addToLeftEdge.col, ctx);
+#endif */
 {{util.qualified_step_name(stepfun)}}(
     {% for tag in stepfun.tag %}{{util.g_ctx_var()}}->{{stepfun.collName}}.{{tag}}, {% endfor -%}
     {% for input in stepfun.inputs recursive %}{{util.g_ctx_var()}}->{{stepfun.collName}}.{{input.binding}}, {% endfor -%}
     {{util.g_ctx_var()}});
+/* #if CNC_DEBUG_TRACE
+    printf("<<CnC Trace>>: DONE {{stepfun.collName}} @ %ld, %ld\n", 
+        ctx->addToLeftEdge.row, ctx->addToLeftEdge.col, ctx);
+#endif */
 return HPX_SUCCESS;
 {% endcall %}
 
@@ -95,13 +103,14 @@ else {
 {{hpxutil.print_set_ctx_tag(stepfun.collName, tag, tag, stepfun.tag, ";")}} 
 {% endfor %}
 
+{{ util.log_msg("PRESCRIBED", stepfun.collName, stepfun.tag) }}
 size_t sz = sizeof({{util.g_ctx_t()}});
 hpx_process_call(
     {{util.g_ctx_var()}}->process, 
     HPX_HERE, 
     {{util.qualified_step_name(stepfun)}}_action, 
     HPX_NULL, 
-    {{util.g_ctx_var()}}, &sz);
+    {{util.g_ctx_var()}}, sz);
 {% endcall %}
 
 }

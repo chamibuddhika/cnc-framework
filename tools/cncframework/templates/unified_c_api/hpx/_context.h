@@ -23,6 +23,7 @@ typedef struct {{g.name}}Context {
        {{ hpxutil.print_tag(stepfun.tag, ";", typed=True)}}
      } {{stepfun.collName}};
 {%- endfor %}
+    {{ util.g_args_param() }};
     hpx_addr_t process;
     hpx_addr_t termination_lco;
 } {{util.g_ctx_t()}};

@@ -20,17 +20,56 @@ pthread_mutex_t _cncDebugMutex = PTHREAD_MUTEX_INITIALIZER;
  ***********************************************************/
 
 // Handler prototypes
-void hpx_main_handler(void* context, size_t ctxSz, void* arguments, size_t argSz);
+void hpx_main_handler(void* context, size_t ctxSz);
+void hpx_launch_handler(void* context, size_t ctxSz);
 
 // Handlers and actions
+HPX_ACTION(HPX_DEFAULT, HPX_MARSHALLED, hpx_launch, hpx_launch_handler, HPX_POINTER, 
+    HPX_SIZE_T);
 HPX_ACTION(HPX_DEFAULT, HPX_MARSHALLED, hpx_main, hpx_main_handler, HPX_POINTER, 
-    HPX_SIZE_T, HPX_POINTER, HPX_SIZE_T);
+    HPX_SIZE_T);
 
-void hpx_main_handler(void* context, size_t ctxSz, void* arguments, size_t argSz) {
+void hpx_launch_handler(void* context, size_t ctxSz) {
   {{util.g_ctx_param()}} = ({{util.g_ctx_t()}}*) context;
-  {{util.g_args_param()}} = ({{util.g_args_t()}}*) arguments;
+  // initialize item collections
+  {% for i in g.concreteItems -%}
+  {% if i.key -%}
 
-  {{util.qualified_step_name(g.initFunction)}}({{util.g_args_var()}}, {{util.g_ctx_var()}});
+  // Calculate the item collection size to be allocated
+  long arr_size = 1;
+  int i;
+  for (i=0; i < {{length(i.key)}}; i++) {
+    arr_size *= DEFAULT_ARRAY_SIZE;
+  }
+
+  {{util.g_ctx_var()}}->{{i.collName}} = _cncItemCollectionCreate(arr_size,
+      sizeof(cncItemFuture), sizeof({{i.type.baseType}}));
+  {{util.g_ctx_var()}}->{{i.collName}}_size = arr_size; 
+  {% else -%}
+  {{util.g_ctx_var()}}->{{i.collName}} = _cncItemCollectionSingletonCreate(
+    sizeof(cncItemFuture), sizeof({{i.type.baseType}}));
+  {% endif -%}
+  {% endfor -%}
+
+  hpx_addr_t termination_lco = hpx_lco_and_new(1); 
+  hpx_addr_t process = hpx_process_new(termination_lco);
+  {{util.g_ctx_var()}}->process = process;
+  {{util.g_ctx_var()}}->termination_lco = termination_lco;
+
+  hpx_process_call({{util.g_ctx_var()}}->process, HPX_HERE, hpx_main, HPX_NULL,
+      {{util.g_ctx_var()}}, ctxSz);
+
+}
+
+void hpx_main_handler(void* context, size_t ctxSz) {
+  {{util.g_ctx_param()}} = ({{util.g_ctx_t()}}*) context;
+
+  {{util.qualified_step_name(g.initFunction)}}({{util.g_ctx_var()}}->{{util.g_args_var()}}, {{util.g_ctx_var()}});
+
+  Combinations_destroy(ctx);
+
+  hpx_exit(0);
+
 }
 
 {{util.g_ctx_t()}} *{{g.name}}_create() {
@@ -56,35 +95,9 @@ void {{g.name}}_destroy({{util.g_ctx_param()}}) {
 
 void {{g.name}}_launch({{util.g_args_param()}}, {{util.g_ctx_param()}}) {
 
-    // initialize item collections
-    {% for i in g.concreteItems -%}
-    {% if i.key -%}
-
-    // Calculate the item collection size to be allocated
-    long arr_size = 1;
-    int i;
-    for (i=0; i < {{length(i.key)}}; i++) {
-      arr_size *= DEFAULT_ARRAY_SIZE;
-    }
-
-    {{util.g_ctx_var()}}->{{i.collName}} = _cncItemCollectionCreate(arr_size,
-        sizeof(cncItemFuture), sizeof({{i.type.baseType}}));
-    {{util.g_ctx_var()}}->{{i.collName}}_size = arr_size; 
-    {% else -%}
-    {{util.g_ctx_var()}}->{{i.collName}} = _cncItemCollectionSingletonCreate(
-      sizeof(cncItemFuture), sizeof({{i.type.baseType}}));
-    {% endif -%}
-    {% endfor -%}
-
-    hpx_addr_t termination_lco = hpx_lco_and_new(1); 
-    hpx_addr_t process = hpx_process_new(termination_lco);
-    {{util.g_ctx_var()}}->process = process;
-    {{util.g_ctx_var()}}->termination_lco = termination_lco;
-
-    size_t ctxSz = sizeof({{util.g_ctx_t()}});
-    size_t argSz = sizeof({{util.g_args_t()}});
-    hpx_process_call({{util.g_ctx_var()}}->process, HPX_HERE, hpx_main, HPX_NULL,
-        {{util.g_ctx_var()}}, &ctxSz, {{util.g_args_var()}}, &argSz);
+  {{util.g_ctx_var()}}->{{util.g_args_var()}} = {{util.g_args_var()}}; 
+  size_t ctxSz = sizeof({{util.g_ctx_t()}});
+  hpx_run(&hpx_launch, {{util.g_ctx_var()}}, ctxSz); 
 
 }
 
@@ -113,8 +126,6 @@ int main(int argc, char *argv[]) {
     cncMain(argc, argv);
 
     hpx_finalize();
-
-    hpx_exit(0);
 }
 
 #endif /* NO_CNC_MAIN */
