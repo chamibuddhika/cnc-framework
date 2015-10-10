@@ -7,7 +7,7 @@
 
 {#- /* TODO - Should refactor and include GraphName_external.h instead */ #}
 #include "{{g.name}}_context.h"
-// #include "cnc_common.h"
+#include "cnc_common.h"
 
 /***************************\
  ******** CNC GRAPH ********
@@ -29,7 +29,6 @@ void {{g.name}}_await({{
 typedef struct { cncTag_t {{ i.key|join(", ") }}; } {{name}}ItemKey;
 {% endfor %}
 {% if g.externVms -%}
-
 /****************************************\
  ******** ITEM MAPPING FUNCTIONS ********
 \****************************************/
@@ -40,32 +39,17 @@ typedef struct { cncTag_t {{ i.key|join(", ") }}; } {{name}}ItemKey;
   }}{{util.g_ctx_param()}});
 {% endfor %}
 {% endif -%}
-
-/********************************\
- ******** ITEM FUNCTIONS ********
-\********************************/
-
+/**************************\
+ ********* ITEM PUT ********
+\**************************/
 {% for name, i in g.itemDeclarations.items() %}
+{# /* TODO - ADD NAMESPACE PREFIX DEFINE THING */ -#}
+// {{i.collName}}
+
 void cncPut_{{name}}({{i.type.ptrType}}_item, {{
-        util.print_tag(i.key, typed=True)
-        }}{{util.g_ctx_param()}});
-
-{{i.type.baseType}} cncGet_{{name}}({{ util.print_tag(i.key, typed=True) }}
-    {{util.g_ctx_param()}});
+            util.print_tag(i.key, typed=True)
+                    }}{{util.g_ctx_param()}});
 {% endfor %}
-
-/********************************\
- ******** STEP FUNCTIONS ********
-\********************************/
-
-void {{util.qualified_step_name(g.initFunction)}}({{g.name}}Args *args, {{util.g_ctx_param()}});
-{% for stepfun in g.finalAndSteps %}
-void {{util.qualified_step_name(stepfun)}}({{
-        util.print_tag(stepfun.tag, typed=True)}}{{
-        util.print_bindings(stepfun.inputItems, typed=True)
-        }}{{util.g_ctx_param()}});
-{% endfor %}
-
 /************************************\
  ******** STEP PRESCRIPTIONS ********
 \************************************/

@@ -1,7 +1,7 @@
 {% import "common_macros.inc.c" as util with context -%}
 {{ util.auto_file_banner() }}
 
-#include "{{g.name}}.h"
+#include "{{g.name}}_internal.h"
 #include "cnchpx.h"
 
 #include <string.h>

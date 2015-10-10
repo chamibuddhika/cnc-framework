@@ -5,7 +5,7 @@
 #ifndef {{defname}}
 #define {{defname}}
 
-#include <hpx/hpx.h>
+#include "{{cncRuntimeName}}.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

@@ -2,7 +2,7 @@
 {% import "hpx_macros.inc.c" as hpxutil with context -%}
 {{ util.auto_file_banner() }}
 
-#include "{{g.name}}.h"
+#include "{{g.name}}_internal.h"
 #include "cnchpx.h"
 
 {#/****** Item instance data cast ******/-#}

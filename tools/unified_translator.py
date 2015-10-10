@@ -293,17 +293,16 @@ class UnifiedTranslator(object):
         self.cnc_type = self.runtime_name
         self.add_template_path("hpx")
         # add runtime files
-        # self.add_support_file("hpx.h")
+        self.add_support_file("hpx.h")
         self.add_support_file("_context.h")
         self.add_support_file("cnchpx.h")
         self.add_support_file("cnchpx_itemcoll.c")
         # self.add_support_file("hpx_internal.h")
         
-        # self.add_support_file("hpx.cpp")
-        # self.add_support_file("cnc_common.h")
-        # self.add_support_file("cnc_common.c")
+        self.add_support_file("cnc_common.h")
+        self.add_support_file("cnc_common.c")
         # add graph scaffolding files
-        # self.add_support_file("_internal.h")
+        self.add_support_file("_internal.h")
         self.add_support_file("_step_ops.c")
         # self.add_support_file("_context.cpp")
         self.add_support_file("_item_ops.c")
