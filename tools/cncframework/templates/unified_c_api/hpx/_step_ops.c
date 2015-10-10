@@ -104,13 +104,13 @@ else {
 {% endfor %}
 
 {{ util.log_msg("PRESCRIBED", stepfun.collName, stepfun.tag) }}
-size_t sz = sizeof({{util.g_ctx_t()}});
+size_t __sz = sizeof({{util.g_ctx_t()}});
 hpx_process_call(
     {{util.g_ctx_var()}}->process, 
     HPX_HERE, 
     {{util.qualified_step_name(stepfun)}}_action, 
     HPX_NULL, 
-    {{util.g_ctx_var()}}, sz);
+    {{util.g_ctx_var()}}, __sz);
 {% endcall %}
 
 }

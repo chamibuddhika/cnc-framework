@@ -66,7 +66,7 @@ void hpx_main_handler(void* context, size_t ctxSz) {
 
   {{util.qualified_step_name(g.initFunction)}}({{util.g_ctx_var()}}->{{util.g_args_var()}}, {{util.g_ctx_var()}});
 
-  Combinations_destroy(ctx);
+  {{g.name}}_destroy(ctx);
 
   hpx_exit(0);
 
@@ -126,6 +126,8 @@ int main(int argc, char *argv[]) {
     cncMain(argc, argv);
 
     hpx_finalize();
+
+    return 0;
 }
 
 #endif /* NO_CNC_MAIN */

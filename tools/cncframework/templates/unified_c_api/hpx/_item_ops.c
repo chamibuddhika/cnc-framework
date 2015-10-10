@@ -57,26 +57,26 @@ void cncPut_{{i.collName}}({{i.type.ptrType}}_item, {{
     const size_t _tagSize = sizeof(_tag)/sizeof(*_tag);
 
     // Calculate the index at the future array
-    long idx = 0;
-    int i,j;
-    for (i = _tagSize; i > 0; i--) {
+    long __idx = 0;
+    int __i,__j;
+    for (__i = _tagSize; __i > 0; __i--) {
       long entries = 1;
-      for (j = i-1; j > 0; j--) {
+      for (__j = __i-1; __j > 0; __j--) {
         entries *= DEFAULT_ARRAY_SIZE;
       }
 
-      idx += entries * _tag[_tagSize-i];
+      __idx += entries * _tag[_tagSize-__i];
     }
 
-    assert (idx < {{util.g_ctx_var()}}->{{i.collName}}_size);
+    assert (__idx < {{util.g_ctx_var()}}->{{i.collName}}_size);
 
-    int item_size = sizeof({{i.type.baseType}});
-    hpx_addr_t addr = item_at({{util.g_ctx_var()}}->{{i.collName}}, idx);
-    hpx_process_call({{util.g_ctx_var()}}->process, addr, {{i.collName}}_item_put, HPX_NULL, _item, item_size); 
+    int __item_size = sizeof({{i.type.baseType}});
+    hpx_addr_t addr = item_at({{util.g_ctx_var()}}->{{i.collName}}, __idx);
+    hpx_process_call({{util.g_ctx_var()}}->process, addr, {{i.collName}}_item_put, HPX_NULL, _item, __item_size); 
     {%- else -%}
-    int item_size = sizeof({{i.type.baseType}});
+    int __item_size = sizeof({{i.type.baseType}});
     hpx_process_call({{util.g_ctx_var()}}->process, {{util.g_ctx_var()}}->{{i.collName}}, {{i.collName}}_item_put, HPX_NULL, _item,
-        item_size);
+        __item_size);
     {%- endif %}
     {%- else -%}
     {% if i.isInline -%}
@@ -102,45 +102,45 @@ void cncPut_{{i.collName}}({{i.type.ptrType}}_item, {{
     const size_t _tagSize = sizeof(_tag)/sizeof(*_tag);
 
     // Calculate the index at the future array
-    long idx = 0;
-    int i,j;
-    for (i = _tagSize; i > 0; i--) {
+    long __idx = 0;
+    int __i,__j;
+    for (__i = _tagSize; __i > 0; __i--) {
       long entries = 1;
-      for (j = i-1; j > 0; j--) {
+      for (__j = i-1; __j > 0; __j--) {
         entries *= DEFAULT_ARRAY_SIZE;
       }
 
-      idx += entries * _tag[_tagSize-i];
+      __idx += entries * _tag[_tagSize-__i];
     }
 
-    assert (idx < {{util.g_ctx_var()}}->{{i.collName}}_size);
+    assert (__idx < {{util.g_ctx_var()}}->{{i.collName}}_size);
 
-    int item_size = sizeof({{i.type.baseType}});
-    {{i.type.baseType}} value;
-    hpx_addr_t addr = item_at({{util.g_ctx_var()}}->{{i.collName}}, idx);
-    hpx_call_sync(addr, {{i.collName}}_item_get, &value, sizeof(value)); 
-    return value;
+    int __item_size = sizeof({{i.type.baseType}});
+    {{i.type.baseType}} __value;
+    hpx_addr_t __addr = item_at({{util.g_ctx_var()}}->{{i.collName}}, __idx);
+    hpx_call_sync(__addr, {{i.collName}}_item_get, &__value, sizeof(__value)); 
+    return __value;
     {%- else -%}
-    int item_size = sizeof({{i.type.baseType}});
-    {{i.type.baseType}} value;
-    hpx_call_sync({{util.g_ctx_var()}}->{{i.collName}}, {{i.collName}}_item_get, &value, 
-        sizeof(value));
-    return value;
+    int __item_size = sizeof({{i.type.baseType}});
+    {{i.type.baseType}} __value;
+    hpx_call_sync({{util.g_ctx_var()}}->{{i.collName}}, {{i.collName}}_item_get, &__value, 
+        sizeof(__value));
+    return __value;
     {%- endif %}
     {%- else -%}
     {% set targetColl = g.itemDeclarations[i.mapTarget] -%}
     {% if i.isInline -%}
     {#/*****INLINE VIRTUAL*****/-#}
-    cncGet_{{i.mapTarget}}({{
+    return cncGet_{{i.mapTarget}}({{
         util.print_tag(i.keyFunction)
-        }}_destination, _slot, _mode, {{util.g_ctx_var()}});
+        }}{{util.g_ctx_var()}});
     {%- else -%}
     {#/*****EXTERN VIRTUAL******/-#}
     {{i.mapTarget}}ItemKey _key = {{i.functionName}}({{
         util.print_tag(i.key) }}{{util.g_ctx_var()}});
-    cncGet_{{i.mapTarget}}({{
+    return cncGet_{{i.mapTarget}}({{
         util.print_tag(targetColl.key, prefix="_key.")
-        }}_destination, _slot, _mode, {{util.g_ctx_var()}});
+        }}{{util.g_ctx_var()}});
     {%- endif %}
     {%- endif %}
 }
