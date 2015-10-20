@@ -126,7 +126,7 @@ void _cncItemCollectionSingletonDestroy(cncItemCollection_t coll);
 
 #define CNC_ABORT(err) exit(err)
 
-#define CNC_SHUTDOWN_ON_FINISH(ctx) {{g.name}}_destroy(ctx) 
+#define CNC_SHUTDOWN_ON_FINISH(ctx) 
 
 #if !NO_VARIADIC_MACROS
 #define CNC_REQUIRE(cond, ...) do { if (!(cond)) { printf(__VA_ARGS__); CNC_ABORT(1); } } while (0)

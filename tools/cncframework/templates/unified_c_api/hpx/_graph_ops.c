@@ -20,8 +20,8 @@ pthread_mutex_t _cncDebugMutex = PTHREAD_MUTEX_INITIALIZER;
  ***********************************************************/
 
 // Handler prototypes
-void hpx_main_handler(void* context, size_t ctxSz);
-void hpx_launch_handler(void* context, size_t ctxSz);
+int hpx_main_handler(void* context, size_t ctxSz);
+int hpx_launch_handler(void* context, size_t ctxSz);
 
 // Handlers and actions
 HPX_ACTION(HPX_DEFAULT, HPX_MARSHALLED, hpx_launch, hpx_launch_handler, HPX_POINTER, 
@@ -29,7 +29,7 @@ HPX_ACTION(HPX_DEFAULT, HPX_MARSHALLED, hpx_launch, hpx_launch_handler, HPX_POIN
 HPX_ACTION(HPX_DEFAULT, HPX_MARSHALLED, hpx_main, hpx_main_handler, HPX_POINTER, 
     HPX_SIZE_T);
 
-void hpx_launch_handler(void* context, size_t ctxSz) {
+int hpx_launch_handler(void* context, size_t ctxSz) {
   {{util.g_ctx_param()}} = ({{util.g_ctx_t()}}*) context;
   // initialize item collections
   {% for i in g.concreteItems -%}
@@ -44,6 +44,7 @@ void hpx_launch_handler(void* context, size_t ctxSz) {
 
   {{util.g_ctx_var()}}->{{i.collName}} = _cncItemCollectionCreate(arr_size,
       sizeof(cncItemFuture), sizeof({{i.type.baseType}}));
+  printf("[HPX_LAUNCH_HANDLER] {{util.g_ctx_var()}}->{{i.collName}} : %lu\n", {{util.g_ctx_var()}}->{{i.collName}});
   {{util.g_ctx_var()}}->{{i.collName}}_size = arr_size; 
   {% else -%}
   {{util.g_ctx_var()}}->{{i.collName}} = _cncItemCollectionSingletonCreate(
@@ -54,19 +55,32 @@ void hpx_launch_handler(void* context, size_t ctxSz) {
   hpx_addr_t termination_lco = hpx_lco_and_new(1); 
   hpx_addr_t process = hpx_process_new(termination_lco);
   {{util.g_ctx_var()}}->process = process;
-  {{util.g_ctx_var()}}->termination_lco = termination_lco;
+  {{util.g_ctx_var()}}->process_termination_lco = termination_lco;
 
   hpx_process_call({{util.g_ctx_var()}}->process, HPX_HERE, hpx_main, HPX_NULL,
       {{util.g_ctx_var()}}, ctxSz);
 
+  hpx_lco_wait(ctx->process_termination_lco);
+  cncPrescribe_cncFinalize(ctx);
+
+  hpx_process_delete(ctx->process, HPX_NULL);
+  hpx_lco_delete(ctx->process_termination_lco, HPX_NULL);
+
+  Combinations_destroy(ctx);
+
+  return HPX_SUCCESS;
+
 }
 
-void hpx_main_handler(void* context, size_t ctxSz) {
+int hpx_main_handler(void* context, size_t ctxSz) {
+  printf("[HPX_MAIN_HANDLER] Entry\n");
   {{util.g_ctx_param()}} = ({{util.g_ctx_t()}}*) context;
 
-  {{util.qualified_step_name(g.initFunction)}}({{util.g_ctx_var()}}->{{util.g_args_var()}}, {{util.g_ctx_var()}});
+  {{util.qualified_step_name(g.initFunction)}}(&{{util.g_ctx_var()}}->{{util.g_args_var()}}, {{util.g_ctx_var()}});
 
   {{g.name}}_destroy(ctx);
+
+  printf("[HPX_MAIN_HANDLER] Before Combinations_destroy : %lu\n", ctx->cells);
 
   hpx_exit(0);
 
@@ -90,12 +104,12 @@ void {{g.name}}_destroy({{util.g_ctx_param()}}) {
     {% endfor -%}
 
     // Free the context
-    free({{util.g_ctx_var()}});
+    // free({{util.g_ctx_var()}});
 }
 
 void {{g.name}}_launch({{util.g_args_param()}}, {{util.g_ctx_param()}}) {
 
-  {{util.g_ctx_var()}}->{{util.g_args_var()}} = {{util.g_args_var()}}; 
+  {{util.g_ctx_var()}}->{{util.g_args_var()}} = *{{util.g_args_var()}}; 
   size_t ctxSz = sizeof({{util.g_ctx_t()}});
   hpx_run(&hpx_launch, {{util.g_ctx_var()}}, ctxSz); 
 
@@ -104,12 +118,17 @@ void {{g.name}}_launch({{util.g_args_param()}}, {{util.g_ctx_param()}}) {
 void {{g.name}}_await({{
         util.print_tag(g.finalizeFunction.tag, typed=True)
         }}{{util.g_ctx_param()}}) {
+  printf("[Combinations_await] Combinations_await entry..\n");
+  /*
   cncPrescribe_{{g.finalizeFunction.collName}}(
         {%- for x in g.finalizeFunction.tag %}tag[{{loop.index0}}], {% endfor -%}
         {{util.g_ctx_var()}});
   hpx_lco_wait({{util.g_ctx_var()}}->termination_lco);
   hpx_lco_delete({{util.g_ctx_var()}}->termination_lco, HPX_NULL);
   hpx_process_delete({{util.g_ctx_var()}}->process, HPX_NULL);
+  */
+
+  printf("[Combinations_await] Combinations_await entry..\n");
 }
 
 /* define NO_CNC_MAIN if you want to use mainEdt as the entry point instead */

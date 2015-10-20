@@ -106,7 +106,7 @@ void cncPut_{{i.collName}}({{i.type.ptrType}}_item, {{
     int __i,__j;
     for (__i = _tagSize; __i > 0; __i--) {
       long entries = 1;
-      for (__j = i-1; __j > 0; __j--) {
+      for (__j = __i-1; __j > 0; __j--) {
         entries *= DEFAULT_ARRAY_SIZE;
       }
 

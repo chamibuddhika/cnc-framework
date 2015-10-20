@@ -36,15 +36,22 @@ HPX_ACTION(HPX_DEFAULT, HPX_MARSHALLED,
 int {{util.qualified_step_name(stepfun)}}_handler(void* context, size_t size) {
 
 {%- call util.render_indented(1) %}
-{{util.g_ctx_param()}}=({{util.g_ctx_t()}}*)context;
+{{util.g_ctx_param()}} = ({{util.g_ctx_t()}}*)context;
 /* #if CNC_DEBUG_TRACE
     printf("<<CnC Trace>>: RUNNING {{stepfun.collName}} @ %ld, %ld\n", 
         ctx->addToLeftEdge.row, ctx->addToLeftEdge.col, ctx);
 #endif */
 {{util.qualified_step_name(stepfun)}}(
     {% for tag in stepfun.tag %}{{util.g_ctx_var()}}->{{stepfun.collName}}.{{tag}}, {% endfor -%}
-    {% for input in stepfun.inputs recursive %}{{util.g_ctx_var()}}->{{stepfun.collName}}.{{input.binding}}, {% endfor -%}
+    {% for input in stepfun.inputs recursive %}
+    {%- if input.keyRanges|count == 0 -%}
+    {{util.g_ctx_var()}}->{{stepfun.collName}}.{{input.binding}},
+    {%- else -%} 
+    {{util.g_ctx_var()}}->arr_data.{{stepfun.collName}}.{{input.binding}}, 
+    {%- endif -%}
+    {% endfor -%}
     {{util.g_ctx_var()}});
+
 /* #if CNC_DEBUG_TRACE
     printf("<<CnC Trace>>: DONE {{stepfun.collName}} @ %ld, %ld\n", 
         ctx->addToLeftEdge.row, ctx->addToLeftEdge.col, ctx);
@@ -63,6 +70,8 @@ void cncPrescribe_{{stepfun.collName}}({{
 {#-/****** Set up input items *****/#}
 {% set inputIsEnabled = [ true ] -%}
 {%- call util.render_indented(1) -%}
+size_t __ctxSz = 0;
+{{util.g_ctx_t()}}* newCtx = {{util.g_ctx_var()}}; 
 {% for input in stepfun.inputs recursive -%}
 {% if input.kind in ['IF', 'ELSE'] -%}
 if ({{ input.cond }}) {
@@ -76,41 +85,64 @@ else {
 {{ loop(input.refs) }}
 {%- endcall %}
 }
+
 {% do inputIsEnabled.pop() -%}
 {% else -%}
-{%- set comment = "Set up \"" ~ input.binding ~ "\" input dependencies" -%}
 {{hpxutil.print_collType(input.collName)}} {{input.binding}};
-{%- call(var) util.render_tag_nest(comment, input, useTag=inputIsEnabled[-1]) -%}
+{%- set comment = "Set up \"" ~ input.binding ~ "\" input dependencies" -%}
 {#/* FIXME: shouldn't even do gets if the input is disabled,
   but that will require a more complicated calculation on the
   dependence count. I could do something where the complicated count
   is only used for steps with conditional ranged inputs... */-#}
 {%- if inputIsEnabled[-1] -%}
+{%- if input.keyRanges|count == 0 -%}
+{%- call(var) util.render_tag_nest(comment, input, useTag=inputIsEnabled[-1]) -%}
 {{input.binding}} = cncGet_{{input.collName}}(
         {%- for k in input.key %}_i{{loop.index0}}, {% endfor -%}
         {{util.g_ctx_var()}});
-{%- endif -%}
 {%- endcall -%}
-{% endif %}
+{% else %}
+__ctxSz = sizeof({{util.g_ctx_t()}}) + 
+    {%- for k in input.key %} ({{k.end}} - {{k.start}}) * {% endfor -%}sizeof({{hpxutil.print_collType(input.collName)}});
+newCtx = ({{util.g_ctx_t()}}*)cncItemAlloc(__ctxSz);
+// newCtx->arr_data = {0};
+newCtx->arr_data.{{stepfun.collName}}.arr_size = {%- for k in input.key %} ({{k.end}} - {{k.start}}) * {% endfor -%} 1;
+
+{%- call(var) util.render_tag_nest(comment, input, useTag=inputIsEnabled[-1]) -%}
+newCtx->arr_data.{{stepfun.collName}}.{{var}} =  cncGet_{{input.collName}}(
+        {%- for k in input.key %}_i{{loop.index0}}, {% endfor -%}
+        {{util.g_ctx_var()}});
+{%- endcall -%}
+{%- endif -%}
+{% else %}
+{{ input.binding }} = 0;
+// TODO here
+{%- endif -%}
+{%- endif -%}
 {% endfor %}
 {% endcall %}
 
 {%- call util.render_indented(1) -%}
+{%- set inputIsEnabled = [ true ] -%}
 {% for input in stepfun.inputs recursive -%}
-{{hpxutil.print_set_ctx_binding(stepfun.collName, input.binding, input.binding, stepfun.inputs, ";")}}
+{{hpxutil.print_set_new_ctx_binding(stepfun.collName, input.binding, input.binding, stepfun.inputs, ";")}}
 {% endfor %}
 {% for tag in stepfun.tag -%}
-{{hpxutil.print_set_ctx_tag(stepfun.collName, tag, tag, stepfun.tag, ";")}} 
+{{hpxutil.print_set_new_ctx_tag(stepfun.collName, tag, tag, stepfun.tag, ";")}} 
 {% endfor %}
 
+if (__ctxSz == 0) {
+  __ctxSz = sizeof({{util.g_ctx_t()}});
+}
+
 {{ util.log_msg("PRESCRIBED", stepfun.collName, stepfun.tag) }}
-size_t __sz = sizeof({{util.g_ctx_t()}});
-hpx_process_call(
-    {{util.g_ctx_var()}}->process, 
+hpx_process_call(ctx->process,
     HPX_HERE, 
     {{util.qualified_step_name(stepfun)}}_action, 
     HPX_NULL, 
-    {{util.g_ctx_var()}}, __sz);
+    newCtx, __ctxSz);
+
+// cncItemFree(newCtx);
 {% endcall %}
 
 }

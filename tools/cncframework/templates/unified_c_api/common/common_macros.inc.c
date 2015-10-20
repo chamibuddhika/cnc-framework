@@ -121,7 +121,7 @@ args
 {% if k.isRanged %}{#/* Range */#}
 s64 {{idx}};
 for ({{idx}} = {{k.start}}; {{idx}} {{range_cmp_op(k)}} {{k.end}}; {{idx}}++) {
-{%- do ranges.append("["~idx~"]") -%}
+{%- do ranges.append("["~idx~"-"~k.start~"]") -%}
 {%- elif useTag %}{#/* Scalar (if used) */#}
 s64 {{idx}} = {{k.expr}};
 {%- endif -%}

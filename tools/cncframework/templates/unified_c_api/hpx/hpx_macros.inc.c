@@ -1,7 +1,8 @@
-{#/****** Print ranged type for item collection ******/#}
-{% macro ranged_type(item) -%}
-{{ g.lookupType(item)
- }}{{ ("*" * item.keyRanges|count) }}
+{#/****** Filter out ranged type for item collection since we handle it seperately ******/#}
+{% macro filter_ranged_type(item) -%}
+{%- if item.keyRanges|count == 0 -%}
+{{ g.lookupType(item)}}{# /*{{ ("[]" * item.keyRanges|count) }}*/ #}
+{%- endif -%}
 {%- endmacro %}
 
 {#/****** Print all the components of a key or tag with pointer ******/#}
@@ -16,10 +17,23 @@
 {% endfor %}
 {%- endmacro %}
 
+{#/****** Print bindings for a ranged inputs with given delimiter ******/#}
+{% macro print_range_inputs(items, delimiter, typed=False, prefix="") -%}
+{% for i in items %}
+{%- if i.keyRanges|count > 0 -%}
+int arr_size{{delimiter}}
+{%- if typed %}{{ g.lookupType(i) }}{% endif -%} {{ prefix ~ i.binding }}{{ ("[]" * i.keyRanges|count)}}{{delimiter}}
+{%- endif -%}
+{% endfor -%}
+{%- endmacro %}
+
 {#/****** Print bindings for a list of items with given delimiter ******/#}
 {% macro print_bindings(items, delimiter, typed=False, prefix="") -%}
 {% for i in items %}
-{%- if typed %}{{ ranged_type(i) }}{% endif -%}{{ prefix ~ i.binding }}{{delimiter}} {% endfor -%}
+{%- if i.keyRanges|count == 0 -%}
+{%- if typed %}{{ filter_ranged_type(i) }}{% endif -%} {{ prefix ~ i.binding }}{{delimiter}}
+{%- endif -%}
+{% endfor -%}
 {%- endmacro %}
 
 {#/****** Print all the components of a key or tag with given delimiter ******/#}
@@ -28,19 +42,21 @@
 {%- endmacro %}
 
 {#/****** Print bindings for a list of items with given delimiter ******/#}
-{% macro print_set_ctx_binding(fun, key, value, items, delimiter, prefix="") -%}
+{% macro print_set_new_ctx_binding(fun, key, value, items, delimiter, prefix="") -%}
 {%- for i in items -%}
+{%- if i.keyRanges|count == 0 -%}
 {%- if prefix ~ i.binding == key -%}
-ctx->{{fun}}.{{ prefix ~ i.binding }} = {{value}}{{delimiter}}
+newCtx->{{fun}}.{{ prefix ~ i.binding }} = {{value}}{{delimiter}}
+{%- endif -%}
 {%- endif -%}
 {%- endfor -%}
 {%- endmacro %}
 
 {#/****** Print all the components of a key or tag with given delimiter ******/#}
-{% macro print_set_ctx_tag(fun, key, value, tags, delimiter, prefix="") -%}
+{% macro print_set_new_ctx_tag(fun, key, value, tags, delimiter, prefix="") -%}
 {%- for x in tags -%}
 {%- if prefix ~ x == key -%}
-ctx->{{fun}}.{{prefix ~ x}} = {{value}}{{delimiter}}
+newCtx->{{fun}}.{{prefix ~ x}} = {{value}}{{delimiter}}
 {%- endif -%}
 {%- endfor -%}
 {%- endmacro %}
