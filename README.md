@@ -83,7 +83,7 @@ Setting up the environment for HPX
 -----------------------------------
 
 This requires HPX to be setup before hand.
-Detailed installation instructions for iCnC can be found on its website:
+Detailed installation instructions for HPX can be found on its website:
 
 http://hpx.crest.iu.edu/
 
