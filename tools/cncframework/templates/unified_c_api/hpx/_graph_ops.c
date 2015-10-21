@@ -66,7 +66,7 @@ int hpx_launch_handler(void* context, size_t ctxSz) {
   hpx_process_delete(ctx->process, HPX_NULL);
   hpx_lco_delete(ctx->process_termination_lco, HPX_NULL);
 
-  Combinations_destroy(ctx);
+  {{g.name}}_destroy(ctx);
 
   return HPX_SUCCESS;
 
@@ -78,7 +78,7 @@ int hpx_main_handler(void* context, size_t ctxSz) {
 
   {{util.qualified_step_name(g.initFunction)}}(&{{util.g_ctx_var()}}->{{util.g_args_var()}}, {{util.g_ctx_var()}});
 
-  {{g.name}}_destroy(ctx);
+  // {{g.name}}_destroy(ctx);
 
   printf("[HPX_MAIN_HANDLER] Before Combinations_destroy : %lu\n", ctx->cells);
 
