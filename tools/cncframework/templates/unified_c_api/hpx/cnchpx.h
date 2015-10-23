@@ -13,7 +13,7 @@
 #define DEFAULT_NUM_BUCKETS 1024
 #define DEFAULT_BUCKET_SIZE 128
 
-#define DEFAULT_ARRAY_SIZE 128
+#define DEFAULT_ARRAY_SIZE 512 
 
 /********************************\
 ******** CNC TYPE ALIASES ********

@@ -105,6 +105,7 @@ else {
 __ctxSz = sizeof({{util.g_ctx_t()}}) + 
     {%- for k in input.key %} ({{k.end}} - {{k.start}}) * {% endfor -%}sizeof({{hpxutil.print_collType(input.collName)}});
 newCtx = ({{util.g_ctx_t()}}*)cncItemAlloc(__ctxSz);
+memcpy(newCtx, ctx, sizeof(EvenOddSumsCtx));
 // newCtx->arr_data = {0};
 newCtx->arr_data.{{stepfun.collName}}.arr_size = {%- for k in input.key %} ({{k.end}} - {{k.start}}) * {% endfor -%} 1;
 
@@ -136,11 +137,21 @@ if (__ctxSz == 0) {
 }
 
 {{ util.log_msg("PRESCRIBED", stepfun.collName, stepfun.tag) }}
+
+{% if isFinalizer %}
+hpx_call_sync(
+    HPX_HERE,
+    {{util.qualified_step_name(stepfun)}}_action, 
+    NULL,
+    0,
+    newCtx, __ctxSz);
+{% else %}
 hpx_process_call(ctx->process,
     HPX_HERE, 
     {{util.qualified_step_name(stepfun)}}_action, 
     HPX_NULL, 
     newCtx, __ctxSz);
+{% endif %}
 
 // cncItemFree(newCtx);
 {% endcall %}

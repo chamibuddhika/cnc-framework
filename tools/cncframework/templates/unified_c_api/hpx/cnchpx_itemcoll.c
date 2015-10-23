@@ -66,7 +66,7 @@ cncItemCollection_t _cncItemCollectionSingletonCreate(int item_size,
     hpx_addr_t addr = hpx_gas_calloc_cyclic(1, item_size, 0);
     assert(addr != HPX_NULL);
 
-    hpx_call_sync(addr, item_init, NULL, 0);
+    hpx_call_sync(addr, item_init, NULL, 0, &future_size);
 
     return addr;
 }

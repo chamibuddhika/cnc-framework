@@ -33,6 +33,7 @@ int hpx_launch_handler(void* context, size_t ctxSz) {
   {{util.g_ctx_param()}} = ({{util.g_ctx_t()}}*) context;
   // initialize item collections
   {% for i in g.concreteItems -%}
+  {
   {% if i.key -%}
 
   // Calculate the item collection size to be allocated
@@ -50,6 +51,7 @@ int hpx_launch_handler(void* context, size_t ctxSz) {
   {{util.g_ctx_var()}}->{{i.collName}} = _cncItemCollectionSingletonCreate(
     sizeof(cncItemFuture), sizeof({{i.type.baseType}}));
   {% endif -%}
+  } 
   {% endfor -%}
 
   hpx_addr_t termination_lco = hpx_lco_and_new(1); 
@@ -60,14 +62,14 @@ int hpx_launch_handler(void* context, size_t ctxSz) {
   hpx_process_call({{util.g_ctx_var()}}->process, HPX_HERE, hpx_main, HPX_NULL,
       {{util.g_ctx_var()}}, ctxSz);
 
-  hpx_lco_wait(ctx->process_termination_lco);
-  cncPrescribe_cncFinalize(ctx);
+  cncPrescribe_{{g.finalizeFunction.collName}}({{util.g_ctx_var()}});
 
   hpx_process_delete(ctx->process, HPX_NULL);
   hpx_lco_delete(ctx->process_termination_lco, HPX_NULL);
 
   {{g.name}}_destroy(ctx);
 
+  hpx_exit(0);
   return HPX_SUCCESS;
 
 }
@@ -78,11 +80,11 @@ int hpx_main_handler(void* context, size_t ctxSz) {
 
   {{util.qualified_step_name(g.initFunction)}}(&{{util.g_ctx_var()}}->{{util.g_args_var()}}, {{util.g_ctx_var()}});
 
+  hpx_lco_wait({{util.g_ctx_var()}}->process_termination_lco);
+
   // {{g.name}}_destroy(ctx);
 
-  printf("[HPX_MAIN_HANDLER] Before Combinations_destroy : %lu\n", ctx->cells);
-
-  hpx_exit(0);
+  return HPX_SUCCESS;
 
 }
 
@@ -118,7 +120,6 @@ void {{g.name}}_launch({{util.g_args_param()}}, {{util.g_ctx_param()}}) {
 void {{g.name}}_await({{
         util.print_tag(g.finalizeFunction.tag, typed=True)
         }}{{util.g_ctx_param()}}) {
-  printf("[Combinations_await] Combinations_await entry..\n");
   /*
   cncPrescribe_{{g.finalizeFunction.collName}}(
         {%- for x in g.finalizeFunction.tag %}tag[{{loop.index0}}], {% endfor -%}
@@ -128,7 +129,6 @@ void {{g.name}}_await({{
   hpx_process_delete({{util.g_ctx_var()}}->process, HPX_NULL);
   */
 
-  printf("[Combinations_await] Combinations_await entry..\n");
 }
 
 /* define NO_CNC_MAIN if you want to use mainEdt as the entry point instead */
