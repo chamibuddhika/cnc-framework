@@ -104,6 +104,10 @@ static inline hpx_type_t get_hpx_type(char* type_name) {
 void *cncItemAlloc(size_t bytes);
 void cncItemFree(void *item);
 
+// These functions use local memory allocaters available
+static inline void *cncLocalAlloc(size_t bytes) { return malloc(bytes); }
+static inline void cncLocalFree(void *data) { free(data); }
+
 hpx_addr_t item_at(hpx_addr_t start, int index); 
 
 // This is for allocating global item collections at AGAS

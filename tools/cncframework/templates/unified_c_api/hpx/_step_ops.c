@@ -43,7 +43,7 @@ int {{util.qualified_step_name(stepfun)}}_handler(void* context, size_t size) {
 #endif */
 {{util.qualified_step_name(stepfun)}}(
     {% for tag in stepfun.tag %}{{util.g_ctx_var()}}->{{stepfun.collName}}.{{tag}}, {% endfor -%}
-    {% for input in stepfun.inputs recursive %}
+    {% for input in stepfun.inputItems recursive %}
     {%- if input.keyRanges|count == 0 -%}
     {{util.g_ctx_var()}}->{{stepfun.collName}}.{{input.binding}},
     {%- else -%} 
@@ -88,7 +88,6 @@ else {
 
 {% do inputIsEnabled.pop() -%}
 {% else -%}
-{{hpxutil.print_collType(input.collName)}} {{input.binding}};
 {%- set comment = "Set up \"" ~ input.binding ~ "\" input dependencies" -%}
 {#/* FIXME: shouldn't even do gets if the input is disabled,
   but that will require a more complicated calculation on the
@@ -97,7 +96,7 @@ else {
 {%- if inputIsEnabled[-1] -%}
 {%- if input.keyRanges|count == 0 -%}
 {%- call(var) util.render_tag_nest(comment, input, useTag=inputIsEnabled[-1]) -%}
-{{input.binding}} = cncGet_{{input.collName}}(
+newCtx->{{stepfun.collName}}.{{input.binding}} = cncGet_{{input.collName}}(
         {%- for k in input.key %}_i{{loop.index0}}, {% endfor -%}
         {{util.g_ctx_var()}});
 {%- endcall -%}
@@ -105,7 +104,7 @@ else {
 __ctxSz = sizeof({{util.g_ctx_t()}}) + 
     {%- for k in input.key %} ({{k.end}} - {{k.start}}) * {% endfor -%}sizeof({{hpxutil.print_collType(input.collName)}});
 newCtx = ({{util.g_ctx_t()}}*)cncItemAlloc(__ctxSz);
-memcpy(newCtx, ctx, sizeof(EvenOddSumsCtx));
+memcpy(newCtx, ctx, sizeof({{util.g_ctx_t()}}));
 // newCtx->arr_data = {0};
 newCtx->arr_data.{{stepfun.collName}}.arr_size = {%- for k in input.key %} ({{k.end}} - {{k.start}}) * {% endfor -%} 1;
 
@@ -116,7 +115,7 @@ newCtx->arr_data.{{stepfun.collName}}.{{var}} =  cncGet_{{input.collName}}(
 {%- endcall -%}
 {%- endif -%}
 {% else %}
-{{ input.binding }} = 0;
+newCtx->{{stepfun.collName}}.{{ input.binding }} = 0;
 // TODO here
 {%- endif -%}
 {%- endif -%}
@@ -125,9 +124,6 @@ newCtx->arr_data.{{stepfun.collName}}.{{var}} =  cncGet_{{input.collName}}(
 
 {%- call util.render_indented(1) -%}
 {%- set inputIsEnabled = [ true ] -%}
-{% for input in stepfun.inputs recursive -%}
-{{hpxutil.print_set_new_ctx_binding(stepfun.collName, input.binding, input.binding, stepfun.inputs, ";")}}
-{% endfor %}
 {% for tag in stepfun.tag -%}
 {{hpxutil.print_set_new_ctx_tag(stepfun.collName, tag, tag, stepfun.tag, ";")}} 
 {% endfor %}

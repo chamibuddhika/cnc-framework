@@ -13,7 +13,7 @@
 
 {% for name, i in g.itemDeclarations.items() %}
 // void cncGet_{{name}}({{ util.print_tag(i.key, typed=True) }}ocrGuid_t destination, u32 slot, ocrDbAccessMode_t mode, {{util.g_ctx_param()}});
-{{i.type.baseType}} cncGet_{{name}}({{ util.print_tag(i.key, typed=True) }}
+{{i.type.ptrType}} cncGet_{{name}}({{ util.print_tag(i.key, typed=True) }}
     {{util.g_ctx_param()}});
 
 {% endfor %}

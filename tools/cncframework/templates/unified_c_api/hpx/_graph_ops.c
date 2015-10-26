@@ -45,7 +45,7 @@ int hpx_launch_handler(void* context, size_t ctxSz) {
 
   {{util.g_ctx_var()}}->{{i.collName}} = _cncItemCollectionCreate(arr_size,
       sizeof(cncItemFuture), sizeof({{i.type.baseType}}));
-  printf("[HPX_LAUNCH_HANDLER] {{util.g_ctx_var()}}->{{i.collName}} : %lu\n", {{util.g_ctx_var()}}->{{i.collName}});
+  // printf("[HPX_LAUNCH_HANDLER] {{util.g_ctx_var()}}->{{i.collName}} : %lu\n", {{util.g_ctx_var()}}->{{i.collName}});
   {{util.g_ctx_var()}}->{{i.collName}}_size = arr_size; 
   {% else -%}
   {{util.g_ctx_var()}}->{{i.collName}} = _cncItemCollectionSingletonCreate(
@@ -75,7 +75,6 @@ int hpx_launch_handler(void* context, size_t ctxSz) {
 }
 
 int hpx_main_handler(void* context, size_t ctxSz) {
-  printf("[HPX_MAIN_HANDLER] Entry\n");
   {{util.g_ctx_param()}} = ({{util.g_ctx_t()}}*) context;
 
   {{util.qualified_step_name(g.initFunction)}}(&{{util.g_ctx_var()}}->{{util.g_args_var()}}, {{util.g_ctx_var()}});

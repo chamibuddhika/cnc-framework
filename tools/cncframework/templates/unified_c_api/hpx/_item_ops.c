@@ -72,7 +72,11 @@ void cncPut_{{i.collName}}({{i.type.ptrType}}_item, {{
 
     int __item_size = sizeof({{i.type.baseType}});
     hpx_addr_t addr = item_at({{util.g_ctx_var()}}->{{i.collName}}, __idx);
+    {% if i.type.isPtrType %}
     hpx_process_call({{util.g_ctx_var()}}->process, addr, {{i.collName}}_item_put, HPX_NULL, _item, __item_size); 
+    {% else %}
+    hpx_process_call({{util.g_ctx_var()}}->process, addr, {{i.collName}}_item_put, HPX_NULL, &_item, __item_size); 
+    {% endif %}
     {%- else -%}
     int __item_size = sizeof({{i.type.baseType}});
     hpx_process_call({{util.g_ctx_var()}}->process, {{util.g_ctx_var()}}->{{i.collName}}, {{i.collName}}_item_put, HPX_NULL, _item,
@@ -93,7 +97,7 @@ void cncPut_{{i.collName}}({{i.type.ptrType}}_item, {{
 
 }
 
-{{i.type.baseType}} cncGet_{{i.collName}}({{ util.print_tag(i.key, typed=True) }}{{util.g_ctx_param()}}) {
+{{i.type.ptrType}} cncGet_{{i.collName}}({{ util.print_tag(i.key, typed=True) }}{{util.g_ctx_param()}}) {
     {% if not i.isVirtual -%}
     {#/*****NON-VIRTUAL*****/-#}
     {{ util.log_msg("GET-DEP", i.collName, i.key) }}
@@ -116,16 +120,24 @@ void cncPut_{{i.collName}}({{i.type.ptrType}}_item, {{
     assert (__idx < {{util.g_ctx_var()}}->{{i.collName}}_size);
 
     int __item_size = sizeof({{i.type.baseType}});
-    {{i.type.baseType}} __value;
+    {{i.type.baseType}}* __value = cncItemAlloc(sizeof({{i.type.baseType}}));
     hpx_addr_t __addr = item_at({{util.g_ctx_var()}}->{{i.collName}}, __idx);
-    hpx_call_sync(__addr, {{i.collName}}_item_get, &__value, sizeof(__value)); 
+    hpx_call_sync(__addr, {{i.collName}}_item_get, __value, __item_size); 
+    {% if i.type.isPtrType %}
     return __value;
+    {% else %}
+    return *__value;
+    {%- endif %}
     {%- else -%}
     int __item_size = sizeof({{i.type.baseType}});
-    {{i.type.baseType}} __value;
+    {{i.type.ptrType}} __value;
     hpx_call_sync({{util.g_ctx_var()}}->{{i.collName}}, {{i.collName}}_item_get, &__value, 
         sizeof(__value));
+    {% if i.type.isPtrType %}
     return __value;
+    {% else %}
+    return *__value;
+    {%- endif %}
     {%- endif %}
     {%- else -%}
     {% set targetColl = g.itemDeclarations[i.mapTarget] -%}
